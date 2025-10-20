@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: "EC2 Instance using cloudformation"
+
+Parameters:
+  amiId:
+    Description: "EC2 AMI ID"
+    Type: String
+    Default: "ami-0e1d35993cb249cee"
+  InstanceType:
+    Description: "EC2 Instance Type"
+    Type: String
+    Default: "t3.micro"
+    AllowedValues:
+      - "t3.micro"
+      - "t3.small"
+  SecurityGroupIds:
+    Description: "Security Group ID"
+    Type: String
+    Default: "sg-0b4b485dd1c5f393d"
+  KeyPairName:
+    Description: "EC2 KeyPair Name"
+    Type: String
+    Default: "aws-trn-2025-oregon"
+
+Resources:
+  ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sda1"
+          Ebs:
+            VolumeSize: 8
+      ImageId: !Ref amiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds:
+        - !Ref SecurityGroupIds
+#checklist:
+#instance typep
+#secgroup
+#keypair

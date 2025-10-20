@@ -1,0 +1,11 @@
+key1: "string value"
+key2: 1 #this is a comment
+parent key:
+  child key: "Child value"
+  child key2: 3.14
+  child key3:
+    key3 child: "key 3 value"
+array key:
+  - "arrray value 1"
+  - "array value 2"
+non inline key: "non inline value"
