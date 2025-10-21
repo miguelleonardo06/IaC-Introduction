@@ -37,6 +37,7 @@ Resources:
       ImageId: "ami-0341d95f75f311023"
       InstanceType: !Ref InstanceTypes
       KeyName: !Ref KeyPairName
+      IamInstanceProfile: !Ref ec2InstanceProfile
       SecurityGroupIds: 
         - !GetAtt ec2LinuxSecurityGroup.GroupId
   
@@ -56,7 +57,8 @@ Resources:
           FromPort: 22
           ToPort: 22
           CidrIp: "0.0.0.0/0"
-    
+
+#Create role for ec2 access s3 bucket
   s3Ec2Role:
     DependsOn: myS3Bucket #only create the role after the S3 bucket has been created
     Type: AWS::IAM::Role
@@ -85,3 +87,10 @@ Resources:
                 Resource:
                   - !GetAtt myS3Bucket.Arn 
                   - !Join ["", [!GetAtt myS3Bucket.Arn, "/*"]]
+
+#assign role to ec2
+  ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: # Required
+        - !Ref s3Ec2Role
