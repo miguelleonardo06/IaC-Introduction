@@ -1,37 +1,35 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: "Sample Lambda Function using CFN"
+Description: "Sample Lamda Function using CFN"
 
 Parameters:
   functionName:
     Type: String 
-    Description: "Lambda Function Name"
+    Description: "Lamda Function Name"
     Default: "fnHelloWorldCfn"
-
   S3Bucket:
     Type: String 
-    Description: "S3 Bucket Name where Lambda code is stored"
+    Description: "S3 Bucket Name where Lamda code is stored"
     Default: "mgl-trn-cfn-scripts"
-
-  lambdaZipFile:
+  lamdaZipFile:
     Type: String 
-    Description: "Lambda Zip File in the bucket lambda/ folder"
+    Description: "Lamda Zip File in the bucket lamda/ folder"
     Default: "fnHello-v0.py.zip"
 
 Resources: 
-  HelloWorldLambda:
+  LogicalID:
     Type: AWS::Lambda::Function
     Properties:
       Code:
         S3Bucket: !Ref S3Bucket
-        S3Key: !Join ["/", ["lambda", !Ref lambdaZipFile]]
+        S3Key: !Join ["/", ["lambda", !Ref lamdaZipFile]]
       Description: "Sample Lambda using CFN"
       FunctionName: !Ref functionName
-      Handler: "fnHello.handler"  # <-- adjust to match your actual Python filename and function name
-      Role: !GetAtt LambdaFunctionRole.Arn
+      Handler: !Ref lamdaZipFile
+      Role: !GetAtt lamdaFunctionRole.Arn # Required
       Runtime: "python3.12"
       Timeout: 60
 
-  LambdaFunctionRole:
+  lamdaFunctionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument: 
@@ -40,11 +38,11 @@ Resources:
           - Effect: "Allow"
             Principal:
               Service: 
-                - "lambda.amazonaws.com"
+                - "lambda.amazonaws.com" 
             Action:
-              - "sts:AssumeRole"
-      Description: !Join [" ", ["IAM Role for", !Ref functionName, "lambda function"]]
-      RoleName: !Join ["-", [!Ref functionName, "lambda", "role"]]
+                - "sts:AssumeRole"      
+      Description: !Join [" ", ["IAM Role for", !Ref functionName, "lamda function"]]
+      RoleName: !Join ["-", [!Ref functionName, "lamda", "role"]]
       Policies:
         - PolicyName: !Join ["-", [!Ref functionName, "execution", "policy"]]
           PolicyDocument: 

@@ -13,3 +13,4 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref s3BucketName
+  
