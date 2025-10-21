@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: 2010-09-09 
+Description: "EC2 Instance using cloudformation" 
+Parameters: 
+  ServerType: 
+    Description: "EC2 Server Type" 
+    Type: String 
+    Default: "LinuxServer" 
+    AllowedValues: 
+      - "LinuxServer" 
+      - "LinuxWebServer" 
+
+  InstanceType: 
+    Description: "EC2 Instance Type" 
+    Type: String 
+    Default: "t3.micro" 
+    AllowedValues: 
+      - "t3.micro" 
+      - "t3.small" 
+
+  VpcId: 
+    Description: "VPC ID" 
+    Type: String 
+    Default: "vpc-0b05cf398dfb4d135" 
+
+  KeyPairName: 
+    Description: "EC2 KeyPair Name" 
+    Type: String 
+    Default: "aws-trn-2025"
+
+
+Mappings: 
+  ec2AMI: 
+    LinuxServer: 
+      amiId: "ami-0341d95f75f311023" 
+    LinuxWebServer: 
+      amiId: "ami-0da6954018a7f5690" 
+
+Conditions: 
+  isLinuxWebServer: !Equals 
+    - !Ref ServerType 
+    - "LinuxWebServer"
+
+Resources:
+  ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sda1"
+          Ebs:
+            VolumeSize: 8
+      ImageId:
+        Fn::FindInMap:
+          - ec2AMI
+          - !Ref ServerType
+          - amiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds:
+        - !Ref ec2SecurityGroup
+        - !If [isLinuxWebServer, !GetAtt ec2WebSecurityGroup.GroupId, !Ref "AWS::NoValue"]
+
+  ec2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "CFN Linux Server Security Group"
+      GroupName: "cfnLinuxSecGroup"
+      SecurityGroupEgress:
+        - CidrIp: "0.0.0.0/0"
+          Description: "Allow all outbound"
+          FromPort: -1
+          IpProtocol: "-1"
+          ToPort: -1
+      SecurityGroupIngress:
+        - CidrIp: "0.0.0.0/0"
+          Description: "Allow SSH"
+          FromPort: 22
+          IpProtocol: "tcp"
+          ToPort: 22
+      VpcId: !Ref VpcId
+
+  ec2WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "CFN Linux Web Server Security Group"
+      GroupName: "cfnLinuxWebSecGroup"
+      SecurityGroupEgress:
+        - CidrIp: "0.0.0.0/0"
+          Description: "Allow all outbound"
+          FromPort: -1
+          IpProtocol: "-1"
+          ToPort: -1
+      SecurityGroupIngress:
+        - CidrIp: "0.0.0.0/0"
+          Description: "Allow HTTP"
+          FromPort: 80
+          IpProtocol: "tcp"
+          ToPort: 80
+      VpcId: !Ref VpcId
+#checklist:
+#instance typep
+#secgroup
+#keypair
