@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "EC2 Instance dynamic Security Group Depends on Linux AMI"
+
+Parameters:  
+  AmiType:
+    Description: "AMI Type"
+    Type: String
+    Default: "LinuxServer"
+    AllowedValues:
+      - "LinuxServer"
+      - "LinuxWebServer"
+  
+  InstanceTypes:
+    Description: "EC2 Instance Type"
+    Type: String
+    Default: "t3.micro"
+    AllowedValues:
+      - "t3.micro"
+      - "t3.small"
+
+  KeyPairName:
+    Description: "EC2 KeyPair Name"
+    Type: String
+    Default: "aws-trn-2025"
+
+  VpcId: 
+    Description: "VPC ID"
+    Type: String
+    Default: "vpc-0b05cf398dfb4d135"
+  
+Mappings:
+  AmiMap: 
+    LinuxServer:
+      amiId: "ami-0341d95f75f311023"
+    LinuxWebServer:
+      amiId: "ami-0da6954018a7f5690"
+
+Conditions:
+  isLinuxWebServer: !Equals
+    - !Ref AmiType
+    - "LinuxWebServer"
+
+Resources: 
+  ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      BlockDeviceMappings: 
+        - DeviceName: "/dev/sda1"
+          Ebs:
+            VolumeSize: 8
+      ImageId: 
+        Fn::FindInMap:
+          - AmiMap
+          - !Ref AmiType
+          - amiId
+      InstanceType: !Ref InstanceTypes
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds: 
+        - !Ref ec2LinuxSecurityGroup
+        - !If [isLinuxWebServer, !Ref ec2WebServerSecurityGroup, !Ref "AWS::NoValue"]
+  
+  ec2LinuxSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "CFN Linux Server Security Group"
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+        - CidrIp: "0.0.0.0/0"
+          Description: "Allow all outbound"
+          FromPort: -1
+          IpProtocol: "-1"
+          ToPort: -1
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: 22
+          ToPort: 22
+          CidrIp: "0.0.0.0/0"
+  
+  ec2WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "CFN Linux Web Server Security Group"
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+        - CidrIp: "0.0.0.0/0"
+          Description: "Allow all outbound"
+          FromPort: -1
+          IpProtocol: "-1"
+          ToPort: -1
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          Description: "Allow HTTP"
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"

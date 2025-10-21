@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: "s3 to EC2 Integration"
+
+Parameters: 
+  s3BucketName:
+    Type: String
+    Description: "The S3 Bucket Name"
+    Default: "mgl-trn-ec2-integration"
+
+  InstanceTypes:
+    Description: "EC2 Instance Type"
+    Type: String
+    Default: "t3.micro"
+    AllowedValues:
+      - "t3.micro"
+      - "t3.small"
+
+  KeyPairName:
+    Description: "EC2 KeyPair Name"
+    Type: String
+    Default: "aws-trn-2025"
+
+Resources: 
+  myS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref s3BucketName
+  
+  ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      BlockDeviceMappings: 
+        - DeviceName: "/dev/sda1"
+          Ebs:
+            VolumeSize: 8
+      ImageId: "ami-0341d95f75f311023"
+      InstanceType: !Ref InstanceTypes
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds: 
+        - !GetAtt ec2LinuxSecurityGroup.GroupId
+  
+  ec2LinuxSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "CFN Linux Server Security Group"
+      VpcId: vpc-0b05cf398dfb4d135
+      SecurityGroupEgress:
+        - CidrIp: "0.0.0.0/0"
+          Description: "Allow all outbound"
+          FromPort: -1
+          IpProtocol: "-1"
+          ToPort: -1
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: 22
+          ToPort: 22
+          CidrIp: "0.0.0.0/0"
+    
+  s3Ec2Role:
+    DependsOn: myS3Bucket #only create the role after the S3 bucket has been created
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: 
+                - "ec2.amazonaws.com" 
+            Action:
+                - "sts:AssumeRole"      
+      Description: "s3 to ec2 integration using CFN"
+      RoleName: "s3Ec2RoleCfn"
+      Policies:
+        - PolicyName: "s3Ec2Policy"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - Effect: "Allow"
+                Action:
+                  - "s3:ListBucket"
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource:
+                  - !GetAtt myS3Bucket.Arn 
+                  - !Join ["", [!GetAtt myS3Bucket.Arn, "/*"]]

@@ -27,7 +27,6 @@ Parameters:
     Type: String 
     Default: "aws-trn-2025"
 
-
 Mappings: 
   ec2AMI: 
     LinuxServer: 
